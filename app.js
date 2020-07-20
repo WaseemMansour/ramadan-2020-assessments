@@ -1,7 +1,20 @@
-// fetch('http://localhost:7777/video-request').then(res => console.log(res))
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Initial Data from DB
+  updateVidReqUI();
   
+  // Listen to Form Submit Request
+  const formVideoReq = document.getElementById('videoReqForm');
+  formVideoReq.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const formData = new FormData(formVideoReq);
+    submitVideosRequest(formData, updateVidReqUI);
+    formVideoReq.reset()
+  });
+
+})
+
+function updateVidReqUI() {
   // Get And Display Video Requests
   const listContainer = document.getElementById('listOfRequests');
   let requestsListHtml = '';
@@ -19,13 +32,17 @@ document.addEventListener('DOMContentLoaded', () => {
               <h3>${req.topic_title}</h3>
               <p class="text-muted mb-2">${req.topic_details}</p>
               <p class="mb-0 text-muted">
-                <strong>Expected results:</strong> ${req.expected_result}
+                ${
+                  req.expected_result ?
+                  `<strong>Expected results:</strong> ${req.expected_result}`
+                  : ``
+                }
               </p>
             </div>
             <div class="d-flex flex-column text-center">
-              <a class="btn btn-link">🔺</a>
-              <h3>${req.votes.ups + req.votes.downs}</h3>
-              <a class="btn btn-link">🔻</a>
+              <a class="btn btn-link" onClick="updateReqVote('${req._id}', 'ups');">🔺</a>
+              <h3 id="vote-score__${req._id}">${req.votes.ups - req.votes.downs}</h3>
+              <a class="btn btn-link" onClick="updateReqVote('${req._id}', 'downs');">🔻</a>
             </div>
           </div>
           <div class="card-footer d-flex flex-row justify-content-between">
@@ -49,31 +66,51 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   );
+}
 
+function updateReqVote (id, vote_type) {
+  updateVote(id, vote_type)
+    .then(videoVoted => {
+      const requestEl = document.getElementById(`vote-score__${videoVoted._id}`);
+      requestEl.innerText = +videoVoted.votes.ups - +videoVoted.votes.downs;
+    })
+}
 
-
-  // Send Request
-  const formVideoReq = document.getElementById('videoReqForm');
-  formVideoReq.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const formData = new FormData(formVideoReq);
-    submitVideosRequest(formData)
+/**
+ * Submit Vote Up/Down on Video Request
+ * @param {*} id Video Request ID
+ * @param {*} vote_type "ups" OR "downs"
+ */
+async function updateVote(id, vote_type) {
+  const data = {id: id, vote_type: vote_type};
+  const response = await fetch('http://localhost:7777/video-request/vote', {
+    method: 'PUT',
+    headers: {
+      'content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
   });
+  return response.json();
+}
 
-})
-
-
-
+/**
+ * Get All Video Requests
+ */
 async function getVideoRequests() {
   const response = await fetch('http://localhost:7777/video-request');
   return response.json();
 }
 
-
-async function submitVideosRequest(data) {
+/**
+ * Submit New Video Request to DB
+ * @param {*} data Form Data
+ * @param {Function} cb Optional Call Back Func to fire after submission.
+ */
+async function submitVideosRequest(data, cb = null) {
   const response = await fetch('http://localhost:7777/video-request', {
     method: 'POST',
     body: data
   });
+  if (cb) cb();
   return response.json();
 }

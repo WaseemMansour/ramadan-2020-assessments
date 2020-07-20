@@ -47,6 +47,7 @@ app.post('/users/login', async (req, res, next) => {
 app.use(express.json());
 
 app.put('/video-request/vote', async (req, res, next) => {
+  console.log(req.body);
   const { id, vote_type } = req.body;
   const response = await VideoRequestData.updateVoteForRequest(id, vote_type);
   res.send(response);
