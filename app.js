@@ -1,3 +1,14 @@
+let searchTerm = '';
+/**
+ * Debouncer Helper Function
+ */
+function debounce (fn, delay) {
+  let time;
+  return function(...args) {
+    clearTimeout(time);
+    time = setTimeout(() => fn.apply(this, args), delay)
+  }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   // Initial Data from DB
@@ -12,21 +23,59 @@ document.addEventListener('DOMContentLoaded', () => {
     formVideoReq.reset()
   });
 
+  /**
+   * Init Search Filter Functionality
+   */
+  const searchBox = document.getElementById('search-box');
+  searchBox.addEventListener('input', debounce((e)=> {
+    e.preventDefault()
+    updateVidReqUI(e.target.value)
+  }, 500))
+
 })
 
-function updateVidReqUI() {
+
+/**
+ * Sort Video Requests By Date / Top Votes
+ * @param {*} sortType 
+ * @param {*} order //TODO Toggle Desc/Asc sorting
+ */
+function sortRequestsBy(sortType = "date", order = "desc") {
+  const listContainer = document.getElementById('listOfRequests');
+  const reqEls = document.querySelectorAll('.video-request-item');
+  const positivity = order === "desc" ? 1 : -1;
+  const negativity = order === "desc" ? -1 : 1;
+  const sortBy = sortType === "date" ? 'submitdate' : 'totalvotes';
+  if (reqEls) {    
+    const sorted = Array.from(reqEls).sort((a,b) => {
+      const itemA = +a.dataset[sortBy];
+      const itemB = +b.dataset[sortBy];
+      return itemA < itemB ? positivity : negativity;
+    })
+    const fragment = document.createDocumentFragment();
+    sorted.forEach(item => {console.log(item);fragment.appendChild(item)})
+    listContainer.innerHTML = "";
+    listContainer.appendChild(fragment)
+  } 
+}
+
+/**
+ * Get All Video Requests and Update UI
+ * @param {*} query Optional Get all filtered by topic
+ */
+function updateVidReqUI(query = searchTerm) {
   // Get And Display Video Requests
   const listContainer = document.getElementById('listOfRequests');
   let requestsListHtml = '';
-  getVideoRequests()
+  getVideoRequests(query)
     .then(res => {
       if (res.length) {
-        
+        listOfRequests = res
         requestsListHtml = res.map(req => {
           const submitDate = new Date(req.submit_date)
           const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
           const formatedDate = submitDate.toLocaleDateString('en-US', options)
-          return `<div class="card mb-3">
+          return `<div class="video-request-item card mb-3" data-submitdate="${req.submit_date}" data-totalvotes="${req.votes.ups - req.votes.downs}">
           <div class="card-body d-flex justify-content-between flex-row">
             <div class="d-flex flex-column">
               <h3>${req.topic_title}</h3>
@@ -96,8 +145,9 @@ async function updateVote(id, vote_type) {
 /**
  * Get All Video Requests
  */
-async function getVideoRequests() {
-  const response = await fetch('http://localhost:7777/video-request');
+async function getVideoRequests(query = searchTerm) {
+  searchTerm = query;
+  const response = await fetch(`http://localhost:7777/video-request?searchTerm=${searchTerm}`);
   return response.json();
 }
 

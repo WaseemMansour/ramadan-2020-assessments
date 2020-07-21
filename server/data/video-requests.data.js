@@ -11,9 +11,8 @@ module.exports = {
   },
 
   searchRequests: (topic) => {
-    return VideoRequest.find({ topic_title: topic })
+    return VideoRequest.find({ topic_title: {$regex: topic, $options: 'i'} })
       .sort({ addedAt: '-1' })
-      .limit(top);
   },
 
   getRequestById: (id) => {
@@ -33,7 +32,6 @@ module.exports = {
   },
 
   updateVoteForRequest: async (id, vote_type) => {
-    console.log(id, vote_type)
     const oldRequest = await VideoRequest.findById({ _id: id });
     const other_type = vote_type === 'ups' ? 'downs' : 'ups';
     return VideoRequest.findByIdAndUpdate(

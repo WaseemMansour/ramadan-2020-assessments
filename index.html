@@ -92,6 +92,14 @@
       </div>
       <hr />
       <h1 class="mb-4">List of requested videos</h1>
+      <div class="float-left">
+        <button class="btn btn-outline-primary mb-3 active" onClick="sortRequestsBy('date')">Sort By Date</button>&nbsp;<button class="btn btn-outline-primary mb-3" onClick="sortRequestsBy('votes')">Sort By Votes</button>
+      </div>
+      
+      <div class="float-right">
+        <input type="search" class="form-control" id="search-box" placeholder="Filter By Topic">
+      </div>
+      <div style="clear: both;"></div>
       <div id="listOfRequests">
         
       </div>
