@@ -11,14 +11,36 @@ function debounce (fn, delay) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Initial Data from DB
-  updateVidReqUI();
+  localStorage.removeItem('videoRequestsAppLogin');
+  
+  // Listen to Form Login Request
+  const formLogin = document.getElementById('loginForm');
+  formLogin.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const formData = new FormData(formLogin);
+    loginRequest(formData)
+      .then(user => {
+        localStorage.setItem('videoRequestsAppLogin', JSON.stringify(user))
+        const loginFormEl = document.querySelector('.login-form');
+        const appContentEl = document.querySelector('.app-content');
+        loginFormEl.classList.add('d-none');
+        appContentEl.classList.remove('d-none');
+      });
+
+    formLogin.reset();
+    
+    // Initial Data from DB
+    updateVidReqUI();
+  });
   
   // Listen to Form Submit Request
   const formVideoReq = document.getElementById('videoReqForm');
   formVideoReq.addEventListener('submit', (e) => {
     e.preventDefault();
     const formData = new FormData(formVideoReq);
+    const loggedUser = JSON.parse(localStorage.getItem('videoRequestsAppLogin'));
+    formData.append('author_name', loggedUser.author_name);
+    formData.append('author_email', loggedUser.author_email);
     submitVideosRequest(formData, updateVidReqUI);
     formVideoReq.reset()
   });
@@ -148,6 +170,19 @@ async function updateVote(id, vote_type) {
 async function getVideoRequests(query = searchTerm) {
   searchTerm = query;
   const response = await fetch(`http://localhost:7777/video-request?searchTerm=${searchTerm}`);
+  return response.json();
+}
+
+/**
+ * Submit New Video Request to DB
+ * @param {*} data Form Data
+ * @param {Function} cb Optional Call Back Func to fire after submission.
+ */
+async function loginRequest(data) {
+  const response = await fetch('http://localhost:7777/users/login', {
+    method: 'POST',
+    body: data
+  });
   return response.json();
 }
 
