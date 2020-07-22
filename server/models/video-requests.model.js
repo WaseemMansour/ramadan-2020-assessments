@@ -12,6 +12,7 @@ var VideoRequestsSchema = mongoose.Schema(
     votes: {
       ups: { type: Number, default: 0 },
       downs: { type: Number, default: 0 },
+      users: {type: Array, default: []}
     },
     target_level: { type: String, default: 'beginner' },
     status: { type: String, default: 'new' },

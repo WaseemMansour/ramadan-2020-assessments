@@ -31,19 +31,35 @@ module.exports = {
     return VideoRequest.findByIdAndUpdate(id, updates, { new: true });
   },
 
-  updateVoteForRequest: async (id, vote_type) => {
+  updateVoteForRequest: async (id, vote_type, user_id) => {
     const oldRequest = await VideoRequest.findById({ _id: id });
     const other_type = vote_type === 'ups' ? 'downs' : 'ups';
-    return VideoRequest.findByIdAndUpdate(
-      { _id: id },
-      {
-        votes: {
-          [vote_type]: ++oldRequest.votes[vote_type],
-          [other_type]: oldRequest.votes[other_type],
+    let oldVotesUsers = oldRequest.votes.users;
+    if ( oldVotesUsers.indexOf(user_id) === -1 ) {
+      oldVotesUsers.push(user_id);
+
+      return VideoRequest.findByIdAndUpdate(
+        { _id: id },
+        {
+          votes: {
+            [vote_type]: ++oldRequest.votes[vote_type],
+            [other_type]: oldRequest.votes[other_type],
+            'users': oldVotesUsers
+          },
         },
-      },
-      { new: true}
-    );
+        { new: true}
+      );
+    } else {
+      return VideoRequest.findByIdAndUpdate(
+        { _id: id },
+        {
+          votes: oldRequest.votes,
+        },
+        { new: true}
+      );
+    }
+
+    
   },
 
   deleteRequest: (id) => {

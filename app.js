@@ -1,4 +1,5 @@
 let searchTerm = '';
+let loggedUser = {};
 /**
  * Debouncer Helper Function
  */
@@ -20,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const formData = new FormData(formLogin);
     loginRequest(formData)
       .then(user => {
+        loggedUser = user;
         localStorage.setItem('videoRequestsAppLogin', JSON.stringify(user))
         const loginFormEl = document.querySelector('.login-form');
         const appContentEl = document.querySelector('.app-content');
@@ -38,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
   formVideoReq.addEventListener('submit', (e) => {
     e.preventDefault();
     const formData = new FormData(formVideoReq);
-    const loggedUser = JSON.parse(localStorage.getItem('videoRequestsAppLogin'));
+    loggedUser = JSON.parse(localStorage.getItem('videoRequestsAppLogin'));
     formData.append('author_name', loggedUser.author_name);
     formData.append('author_email', loggedUser.author_email);
     submitVideosRequest(formData, updateVidReqUI);
@@ -111,9 +113,9 @@ function updateVidReqUI(query = searchTerm) {
               </p>
             </div>
             <div class="d-flex flex-column text-center">
-              <a class="btn btn-link" onClick="updateReqVote('${req._id}', 'ups');">🔺</a>
+              <a class="btn btn-link" onClick="updateReqVote('${req._id}', 'ups', '${loggedUser._id}');">🔺</a>
               <h3 id="vote-score__${req._id}">${req.votes.ups - req.votes.downs}</h3>
-              <a class="btn btn-link" onClick="updateReqVote('${req._id}', 'downs');">🔻</a>
+              <a class="btn btn-link" onClick="updateReqVote('${req._id}', 'downs', '${loggedUser._id}');">🔻</a>
             </div>
           </div>
           <div class="card-footer d-flex flex-row justify-content-between">
@@ -139,8 +141,8 @@ function updateVidReqUI(query = searchTerm) {
   );
 }
 
-function updateReqVote (id, vote_type) {
-  updateVote(id, vote_type)
+function updateReqVote (id, vote_type, user_id) {
+  updateVote(id, vote_type, user_id)
     .then(videoVoted => {
       const requestEl = document.getElementById(`vote-score__${videoVoted._id}`);
       requestEl.innerText = +videoVoted.votes.ups - +videoVoted.votes.downs;
@@ -152,8 +154,8 @@ function updateReqVote (id, vote_type) {
  * @param {*} id Video Request ID
  * @param {*} vote_type "ups" OR "downs"
  */
-async function updateVote(id, vote_type) {
-  const data = {id: id, vote_type: vote_type};
+async function updateVote(id, vote_type, user_id) {
+  const data = {id: id, vote_type: vote_type, user_id: user_id};
   const response = await fetch('http://localhost:7777/video-request/vote', {
     method: 'PUT',
     headers: {
